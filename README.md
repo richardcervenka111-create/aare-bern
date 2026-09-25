@@ -1,6 +1,6 @@
 # Aare Bern jetzt
 
-Wassertemperatur und Abfluss der Aare in Bern, live, mit Schwimm-Hinweisen. Eine Seite, drei Sprachen (DE/EN/SK), kein Tracking.
+Wassertemperatur und Abfluss der Aare in Bern, live, mit Schwimm-Hinweisen. Eine Seite, zwei Sprachen (DE/EN), kein Tracking.
 
 Live: **https://richardcervenka111-create.github.io/aare-bern/**
 
