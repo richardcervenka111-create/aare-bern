@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aare Bern jetzt</title>
+<meta name="description" content="Aare in Bern: Wassertemperatur, Abfluss und Schwimm-Hinweise live. Daten BAFU via aare.guru. Kein Tracking.">
+<meta name="theme-color" content="#0b2a3a">
+<style>
+:root{--bg:#0b2a3a;--card:#123a4f;--line:#1f5068;--txt:#eaf4f8;--mut:#9dc0d0;--acc:#5fe1d4;--warn:#ffcc55;--bad:#ff6b6b;--ok:#6ee7a0}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#eef6f9;--card:#ffffff;--line:#cfe1ea;--txt:#0b2a3a;--mut:#4d6b7a;--acc:#0a8f84}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font:17px/1.5 -apple-system,system-ui,"Segoe UI",sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-size:26px;margin:8px 0 0;font-weight:700}
+.lang button{background:none;border:1px solid var(--line);color:var(--mut);border-radius:8px;padding:4px 9px;font-size:14px;cursor:pointer;margin-left:4px}
+.lang button[aria-pressed="true"]{background:var(--acc);color:#04202a;border-color:var(--acc);font-weight:600}
+.sub{color:var(--mut);font-size:14px;margin:4px 0 16px}
+.big{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:12px 0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.big .v{font-size:56px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.big .u{font-size:20px;color:var(--mut);font-weight:500}
+.big .t{font-size:20px;font-weight:600;margin-top:6px}
+.big .d{color:var(--mut);font-size:14px;margin-top:4px}
+.badge{padding:8px 12px;border-radius:999px;font-weight:700;font-size:14px;white-space:nowrap}
+.b-ok{background:var(--ok);color:#052}.b-warn{background:var(--warn);color:#432}.b-bad{background:var(--bad);color:#fff}
+.scale{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--ok) 0 40%,var(--warn) 40% 55%,var(--bad) 55% 100%);position:relative;margin:14px 0 6px}
+.scale i{position:absolute;top:-6px;width:4px;height:24px;background:var(--txt);border-radius:2px;transform:translateX(-2px)}
+.scale-l{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:12px 0}
+.k{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.k b{display:block;font-size:22px;font-variant-numeric:tabular-nums}.k span{color:var(--mut);font-size:13px}
+h2{font-size:18px;margin:26px 0 8px}
+ol{padding-left:22px;margin:0}li{margin:6px 0}
+svg{width:100%;height:120px;display:block}
+.foot{color:var(--mut);font-size:13px;margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
+.foot a{color:var(--acc)}
+.err{background:var(--bad);color:#fff;border-radius:12px;padding:12px;display:none}
+.hid{display:none}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><h1 data-i="title">Aare Bern jetzt</h1><div class="sub" data-i="sub">Messstation Bern Schönau · BAFU · <span id="when">…</span></div></div>
+  <div class="lang" role="group" aria-label="Sprache"><button data-l="de" aria-pressed="true">DE</button><button data-l="en" aria-pressed="false">EN</button><button data-l="sk" aria-pressed="false">SK</button></div>
+</header>
+
+<div class="err" id="err" role="alert"></div>
+
+<section class="big" aria-live="polite">
+  <div><div><span class="v" id="temp">–</span> <span class="u">°C</span></div><div class="t" id="tempText">…</div><div class="d"><span data-i="in2h">In 2 Stunden</span>: <b id="fc2">–</b> °C</div></div>
+  <div class="badge" id="tempBadge">…</div>
+</section>
+
+<section class="big" aria-live="polite">
+  <div><div><span class="v" id="flow">–</span> <span class="u">m³/s</span></div><div class="t" id="flowText">…</div><div class="d" id="flowHint">…</div>
+    <div class="scale" aria-hidden="true"><i id="flowMark" style="left:0"></i></div>
+    <div class="scale-l"><span>0</span><span id="thr">–</span><span>500</span></div>
+  </div>
+  <div class="badge" id="flowBadge">…</div>
+</section>
+
+<h2 data-i="h48">Letzte 48 Stunden</h2>
+<div class="k"><svg id="chart" viewBox="0 0 600 120" preserveAspectRatio="none" role="img" aria-label="Temperaturverlauf"></svg><div class="scale-l"><span id="c0"></span><span id="c1"></span></div></div>
+
+<div class="row">
+  <div class="k"><b id="wt">–</b><span data-i="air">Lufttemperatur jetzt</span></div>
+  <div class="k"><b id="sun">–</b><span data-i="sun">Sonne heute</span></div>
+  <div class="k"><b id="rec">–</b><span data-i="rec">Rekord (Aare Bern)</span></div>
+  <div class="k"><b id="lvl">–</b><span data-i="lvl">Pegel m ü. M.</span></div>
+</div>
+
+<h2 data-i="h6">Bevor du reingehst</h2>
+<div class="k"><ol id="rules"></ol></div>
+
+<div class="foot">
+  <span data-i="src">Daten</span>: <a href="https://aare.guru" rel="noopener">aare.guru</a> (Existenz) ← <a href="https://www.hydrodaten.admin.ch/de/seen-und-fluesse/stationen-und-daten/2135" rel="noopener">BAFU Hydrologie, Station 2135</a>. <span data-i="foot2">Richtwerte aus den offiziellen Skalen der Datenquelle. Keine Cookies, kein Tracking, keine Speicherung.</span>
+  <br><a href="https://github.com/richardcervenka111-create/aare-bern" rel="noopener">GitHub</a> · MIT
+</div>
+</main>
+<script>
+(function(){
+const I = {
+ de:{title:"Aare Bern jetzt",sub:"Messstation Bern Schönau · BAFU · ",in2h:"In 2 Stunden",h48:"Letzte 48 Stunden",air:"Lufttemperatur jetzt",sun:"Sonne heute",rec:"Rekord (Aare Bern)",lvl:"Pegel m ü. M.",h6:"Bevor du reingehst",src:"Daten",
+  foot2:"Richtwerte aus den offiziellen Skalen der Datenquelle. Keine Cookies, kein Tracking, keine Speicherung.",
+  ok:"Schwimmen möglich",warn:"Vorsicht, viel Wasser",bad:"Nicht schwimmen",cold:"Kalt, kurz bleiben",cool:"Frisch",warmok:"Angenehm",
+  flowHintOk:"Abfluss unter dem Richtwert von {t} m³/s.",flowHintWarn:"Abfluss nahe am Richtwert von {t} m³/s: nur mit Erfahrung, Ausstieg kennen.",flowHintBad:"Abfluss über dem Richtwert von {t} m³/s. Starke Strömung, Treibholz, kaum Ausstiege.",
+  rules:["Nie allein schwimmen. Zu zweit sieht man einander.","Ausstieg vorher kennen. Marzili, Lorraine und Eichholz haben Treppen, dazwischen kaum.","Nichts Aufblasbares und kein Alkohol. Beides überschätzt dich.","Kein Sprung von Brücken oder ins unbekannte Wasser.","Ab 16 °C wird es lang kalt. Kürzer bleiben, warm anziehen.","Bei Gewitter, Hochwasser oder braunem Wasser: raus und zu Fuss zurück.","Notfall: 144 (Sanität), 117 (Polizei), 1414 (Rega)."],
+  updated:"aktualisiert",err:"Daten gerade nicht erreichbar. Offizielle Werte: hydrodaten.admin.ch, Station 2135."},
+ en:{title:"Aare Bern now",sub:"Gauging station Bern Schönau · FOEN · ",in2h:"In 2 hours",h48:"Last 48 hours",air:"Air temperature now",sun:"Sun today",rec:"Record (Aare Bern)",lvl:"Level m a.s.l.",h6:"Before you get in",src:"Data",
+  foot2:"Guide values from the official scales of the data source. No cookies, no tracking, nothing stored.",
+  ok:"Swimming possible",warn:"Caution, high water",bad:"Do not swim",cold:"Cold, stay short",cool:"Fresh",warmok:"Pleasant",
+  flowHintOk:"Flow below the guide value of {t} m³/s.",flowHintWarn:"Flow close to the guide value of {t} m³/s: experienced swimmers only, know your exit.",flowHintBad:"Flow above the guide value of {t} m³/s. Strong current, driftwood, hardly any exits.",
+  rules:["Never swim alone. Two people can see each other.","Know your exit before you go in. Marzili, Lorraine and Eichholz have stairs, in between almost nothing.","No inflatables, no alcohol. Both make you overestimate yourself.","No jumping from bridges or into unknown water.","Below 16 °C it gets cold fast. Stay shorter, dress warm after.","Thunderstorm, flood or brown water: get out and walk back.","Emergency: 144 (ambulance), 117 (police), 1414 (Rega)."],
+  updated:"updated",err:"Data not reachable right now. Official values: hydrodaten.admin.ch, station 2135."},
+ sk:{title:"Aare Bern teraz",sub:"Merná stanica Bern Schönau · BAFU · ",in2h:"O 2 hodiny",h48:"Posledných 48 hodín",air:"Teplota vzduchu teraz",sun:"Slnko dnes",rec:"Rekord (Aare Bern)",lvl:"Hladina m n. m.",h6:"Skôr než vojdeš",src:"Dáta",
+  foot2:"Orientačné hodnoty z oficiálnych škál zdroja dát. Žiadne cookies, žiadne sledovanie, nič sa neukladá.",
+  ok:"Plávanie možné",warn:"Pozor, veľa vody",bad:"Neplávať",cold:"Studená, krátko",cool:"Svieža",warmok:"Príjemná",
+  flowHintOk:"Prietok pod orientačnou hranicou {t} m³/s.",flowHintWarn:"Prietok blízko hranice {t} m³/s: len so skúsenosťou, poznaj výstup.",flowHintBad:"Prietok nad hranicou {t} m³/s. Silný prúd, naplavené drevo, takmer žiadne výstupy.",
+  rules:["Nikdy neplávaj sám. Dvaja sa vidia.","Poznaj výstup vopred. Marzili, Lorraine a Eichholz majú schody, medzi nimi takmer nič.","Nič nafukovacie a žiadny alkohol. Oboje ťa preceňuje.","Žiadne skoky z mostov ani do neznámej vody.","Pod 16 °C je rýchlo zima. Ostaň kratšie, potom sa teplo obleč.","Búrka, povodeň alebo hnedá voda: von a späť pešo.","Núdza: 144 (záchranka), 117 (polícia), 1414 (Rega)."],
+  updated:"aktualizované",err:"Dáta teraz nie sú dostupné. Oficiálne hodnoty: hydrodaten.admin.ch, stanica 2135."}
+};
+let lang = (navigator.language||"de").slice(0,2); if(!I[lang]) lang="de";
+try{ const s=localStorage.getItem("aare-lang"); if(s&&I[s]) lang=s; }catch(e){}
+let D=null;
+const $=id=>document.getElementById(id);
+function t(k){return I[lang][k];}
+function applyLang(){
+  document.documentElement.lang=lang;
+  document.querySelectorAll("[data-i]").forEach(el=>{ if(el.dataset.i!=="sub") el.textContent=t(el.dataset.i); });
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.l===lang?"true":"false"));
+  if(D) render();
+}
+document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{lang=b.dataset.l; try{localStorage.setItem("aare-lang",lang);}catch(e){} applyLang();}));
+
+function fmt(ts){ const d=new Date(ts*1000); return d.toLocaleString(lang==="en"?"en-GB":lang==="sk"?"sk-SK":"de-CH",{weekday:"short",hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zurich"}); }
+
+function render(){
+  const a=D.aare, thr=a.flow_scale_threshold||220;
+  $("when").textContent=t("updated")+" "+fmt(a.timestamp);
+  $("temp").textContent=(a.temperature??"–"); $("tempText").textContent=a.temperature_text||""; $("fc2").textContent=a.forecast2h??"–";
+  const tb=$("tempBadge"); tb.className="badge "+(a.temperature<16?"b-warn":a.temperature<18?"b-ok":"b-ok"); tb.textContent=a.temperature<16?t("cold"):a.temperature<18?t("cool"):t("warmok");
+  $("flow").textContent=a.flow??"–"; $("flowText").textContent=a.flow_text||"";
+  const f=a.flow||0, warnFrom=Math.round(thr*0.75);
+  const cls=f>=thr?"bad":f>=warnFrom?"warn":"ok";
+  const fb=$("flowBadge"); fb.className="badge b-"+cls; fb.textContent=t(cls);
+  $("flowHint").textContent=t(cls==="ok"?"flowHintOk":cls==="warn"?"flowHintWarn":"flowHintBad").replace("{t}",thr);
+  $("flowMark").style.left=Math.min(100,f/500*100)+"%"; $("thr").textContent=thr+" m³/s";
+  const sc=document.querySelector(".scale"); sc.style.background=`linear-gradient(90deg,var(--ok) 0 ${warnFrom/5}%,var(--warn) ${warnFrom/5}% ${thr/5}%,var(--bad) ${thr/5}% 100%)`;
+  const w=D.weather&&D.weather.current; $("wt").textContent=w?w.tt+" °C":"–";
+  const s=D.sun&&D.sun.today; $("sun").textContent=s?s.suntotal+" h":"–";
+  const r=a.historical_temp_max; $("rec").textContent=r?r.value+" °C":"–";
+  $("lvl").textContent=a.height?a.height.toFixed(2):"–";
+  $("rules").innerHTML=t("rules").map(x=>"<li>"+x.replace(/</g,"&lt;")+"</li>").join("");
+  // graf 48 h
+  const p=(D.aarepast||[]).filter(x=>typeof x.temperature==="number"); if(p.length>1){
+    const xs=p.map(x=>x.timestamp), ys=p.map(x=>x.temperature);
+    const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.floor(Math.min(...ys))-1,y1=Math.ceil(Math.max(...ys))+1;
+    const X=v=>(v-x0)/(x1-x0||1)*600, Y=v=>120-((v-y0)/(y1-y0||1))*110-5;
+    const d=p.map((q,i)=>(i?"L":"M")+X(q.timestamp).toFixed(1)+","+Y(q.temperature).toFixed(1)).join(" ");
+    $("chart").innerHTML=`<path d="${d} L600,120 L0,120 Z" fill="var(--acc)" opacity=".15"/><path d="${d}" fill="none" stroke="var(--acc)" stroke-width="2.5"/><text x="4" y="14" fill="var(--mut)" font-size="11">${y1} °C</text><text x="4" y="116" fill="var(--mut)" font-size="11">${y0} °C</text>`;
+    $("c0").textContent=fmt(x0); $("c1").textContent=fmt(x1);
+  }
+}
+async function load(){
+  try{
+    const r=await fetch("https://aareguru.existenz.ch/v2018/current?city=bern&app=aare-bern-github&version=1",{cache:"no-store"});
+    if(!r.ok) throw new Error(r.status);
+    D=await r.json(); $("err").style.display="none"; render();
+  }catch(e){ $("err").textContent=t("err"); $("err").style.display="block"; }
+}
+applyLang(); load(); setInterval(load, 10*60*1000);
+})();
+</script>
+</body>
+</html>
